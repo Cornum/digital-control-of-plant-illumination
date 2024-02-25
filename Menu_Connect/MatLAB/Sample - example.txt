@@ -1,0 +1,9 @@
+0 - led channel number [0-8?]
+60 - minutes to grow [0-...]
+0 - type (block) [0-2]
+8 - hours start - growth [0-24]
+0 - minutes start [0-60]
+23 - hours start - decline [0-24]
+0 - minutes start [0-60]
+2048 - max intensity [0-4095]
+-1 - file end

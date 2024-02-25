@@ -1,8 +1,8 @@
-#include <Wire.h>                 //pro I2C
-#include <LiquidCrystal_I2C.h>    //pro display
+#include <Wire.h>                 //for I2C
+#include <LiquidCrystal_I2C.h>    //for LSD
 
 
-////Menu
+////Menu Global variables
   // Define debounce time in milliseconds
   #define DEBOUNCE_TIME 50
 
@@ -11,35 +11,49 @@
   bool buttonState = HIGH;
   bool lastButtonState = HIGH;
 
+  // Encoder const
+  const int pinCLK = 2;           
+  const int pinDT  = 3;           
+  const int pinSW  = 4;           
 
-  const int pinCLK = 2;           // otocny ovladac (enkoder)
-  const int pinDT  = 3;           //
-  const int pinSW  = 4;           // otocny ovladac (enkoder)
-
-  LiquidCrystal_I2C lcd(0x27, 20, 4);     // LCD display pres I2C
-
+  //Menu's global
   int localParametrMenu = 0;
   int globalParametrMenu = 0;
   int timeConst = 0;
 
-  int res = 12; 
-  int poziceEnkod = 0;                // pro enkoder
+  // LCD display I2C
+  LiquidCrystal_I2C lcd(0x27, 20, 4);     
+
+  // Screen resolution
+  int res = 12;   
+
+  // Encoder variables
+  int poziceEnkod = 0;                
   int stavPred;                       
   int stavCLK;                        
   int stavSW;   
 ////\Menu
 
-const int  arrayLen = 10;
+///MatLab Connection Global variables
+  int channel;
+  int GrowthTime;
+  int typeFunction;
+  int timeGrowthStartHours;
+  int timeGrowthStartMinutes;
+  int timeDeclineStartHours;
+  int timeDeclineStartMinutes;
+  int maxIntensity;
+///\MatLab Connection
 
 
 void setup() {
-  Serial.begin(115200);         // rychlost seriove linky
+  Serial.begin(115200);         // Serial speed
 
 ////Menu
 
-  res =(int) pow(2,res);        // rozliseni 2^res --- tj. 4096 hodnot   
+  res =(int) pow(2,res);        // Resolution 2^res --- 4096 values   
 
-  //iniciace LCD displae + hlaska
+  //Initiation LCD
   lcd.init();  
   lcd.setCursor(3,0);
   lcd.print("Hello, starting..");
@@ -50,35 +64,40 @@ void setup() {
     lcd.backlight();
     delay(50);    
   }  
-  //iniciace LCD displae + hlaska
+  //\Initiation LCD
 
-  pinMode(pinCLK, INPUT);               // Otocny ovladac
-  pinMode(pinDT, INPUT);                // Otocny ovladac
-  pinMode(pinSW, INPUT_PULLUP);         // Otocny ovladac - tlacitko  
-  stavPred = digitalRead(pinCLK);       // Pocatecni stav otocneho ovladace
-  drwMenu();                             // Pocatecni vypsani displaye
-
+  //Encoder initiation
+  pinMode(pinCLK, INPUT);               // Encoder
+  pinMode(pinDT, INPUT);                // Encoder
+  pinMode(pinSW, INPUT_PULLUP);         // Encoder button
+  stavPred = digitalRead(pinCLK);       // Start encoder
+  drawMenu();                             // Start menu
+  //\Encoder initiation
 ////\Menu
-  Serial.println(arrayLen);
+
+////aA
+  //Read sample from MatLAB for growth function
+  
+////\aA
 
 }
 
 
 
 void loop() {
-int array[] = {2315, 1566, 152, 88, 432, 489, 4897, 123, 321, 222};
 
 ////Menu
   stavCLK = digitalRead(pinCLK);
   stavSW = digitalRead(pinSW);
-
-  //Otoceni enkoderem
-  if (stavCLK != stavPred) {                  //nastaveni parametru (udelat vyber z menu)
+int array[] = {1,2,3,-1};
+  //Encoder rotation
+  if (stavCLK != stavPred) {
     if (digitalRead(pinDT) != stavCLK){localParametrMenu++;}
     else{localParametrMenu--;}
-    drwMenu();
+    drawMenu();
   }
   stavPred = stavCLK;
+  //\Encoder rotation
 
   // Handle button press (with debouncing)
   int reading = digitalRead(pinSW);
@@ -86,24 +105,25 @@ int array[] = {2315, 1566, 152, 88, 432, 489, 4897, 123, 321, 222};
     lastDebounceTime = millis();
   }
 
-  if ((millis() - lastDebounceTime) > DEBOUNCE_TIME) {  //control double click
+  if ((millis() - lastDebounceTime) > DEBOUNCE_TIME) {
     if (reading != buttonState) {
       buttonState = reading;
       if (buttonState == LOW) {
         handleButtonClick(array);
-        drwMenu();
+        drawMenu();
       }
     }
   }
 
 
   lastButtonState = reading;
+  //\Handle button press (with debouncing)
 ////\Menu
 
 }
 
 
-void drwMenu() {                                       //LCD - vypis Menu
+void drawMenu() {                                       //LCD - draw Menu
   lcd.clear();
   switch(globalParametrMenu){
     case 1:{ //settings menu
@@ -178,7 +198,7 @@ void drwMenu() {                                       //LCD - vypis Menu
       lcd.setCursor(0,0);
       lcd.print("Measurment: ");
       lcd.setCursor(0,1);
-      lcd.print(arrayLen);
+      //lcd.print(arrayLen);
       lcd.setCursor(10,1);
       lcd.print("values");
       lcd.setCursor(0,3);
@@ -204,10 +224,10 @@ void drwMenu() {                                       //LCD - vypis Menu
       break;
     }
   }
-}                                                     //LCD - vypis Menu
+}                                                     //\LCD - draw Menu
 
 
-void handleButtonClick(int* forSaving){
+void handleButtonClick(int* forSaving){  //Button click handle
   switch(globalParametrMenu){
     case 1:{  //Settings
       if(localParametrMenu % 3 == 0){
@@ -256,7 +276,7 @@ void handleButtonClick(int* forSaving){
         lcd.print("Proceeding... ->");
         if(Serial.availableForWrite()){
           Serial.println(0);
-          for (int i = 0; i<arrayLen; i++){
+          for (int i = 0; i < forSaving[i] != -1; i++){
             Serial.println(forSaving[i]); // Send value into Serial port
             delay(2000);
             }
