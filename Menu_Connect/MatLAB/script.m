@@ -23,17 +23,15 @@ try
         disp('Serial port is not open.');
     end
     
-    clear s;
 catch
     clear s;
     error('Error communicating with Arduino.');
 end
 
-
+pause(1000); % think how to realise 
 %reading data block  -rework
 
-arraySize = round(str2double(readline(s)));
-dataArray = zeros(1, arraySize);
+dataArray = zeros(1, 10);
 
 fileID = fopen('Data.txt','w');
 

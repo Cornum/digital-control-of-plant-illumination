@@ -5,6 +5,7 @@
 ////Menu Global variables
   // Define debounce time in milliseconds
   #define DEBOUNCE_TIME 50
+  
 
   // Variables for button debounce
   unsigned long lastDebounceTime = 0;
@@ -35,15 +36,34 @@
 ////\Menu
 
 ///MatLab Connection Global variables
-  int channel;
-  int GrowthTime;
-  int typeFunction;
-  int timeGrowthStartHours;
-  int timeGrowthStartMinutes;
-  int timeDeclineStartHours;
-  int timeDeclineStartMinutes;
-  int maxIntensity;
+  int channel = 0;  //default value
+  int GrowthTime = 60;  //in min
+  int typeFunction = 0;  //block type
+  int timeGrowthStartHours = 8;
+  int timeGrowthStartMinutes = 0;
+  int timeDeclineStartHours = 23;
+  int timeDeclineStartMinutes = 0;
+  int maxIntensity = 2048;  //up to 4095
+  
+  
+  // int readDataArray[8];
+  
+  // const byte MAX_BUFFER_SIZE = 64; 
+  // char buffer[MAX_BUFFER_SIZE];    
+  // byte index = 0;   
 ///\MatLab Connection
+
+////Growth function
+  ///Data for saving
+    const float AvogadroConstant = 6.02214076e23;
+    const float PlanckConstant = 6.62607015e-34;
+    const float PiConstant = 3.1415926;
+    const int MeasureTime = 10; //chain with time?
+
+    float einsteinArray[MeasureTime];
+  ///\Data for saving
+  
+////\Growth function
 
 
 void setup() {
@@ -74,12 +94,40 @@ void setup() {
   drawMenu();                             // Start menu
   //\Encoder initiation
 ////\Menu
+////Variables for function
+  /*
+    //Read sample from MatLAB for growth function
+    for(int i = 0; i > 7; i++){
+      if (Serial.available()) {
+        char incomingChar = Serial.read(); // Считываем входной символ из Serial порта
+        if (incomingChar != '\n') {        // Проверяем, не является ли символ завершающим
+          buffer[index++] = incomingChar;  // Записываем символ в буфер
+          if (index >= MAX_BUFFER_SIZE) {  // Проверяем на переполнение буфера
+            // Обработка переполнения буфера
+            index = 0;                      // Сбрасываем индекс
+          }
+        } else {
+          buffer[index] = '\0';             // Добавляем завершающий символ строки
+          readDataArray[i] = atoi(buffer);   // Преобразуем строку в целое число
+          // Делаем что-то с полученным целым числом
+          // Сбрасываем индекс для следующей строки
+          index = 0;
+        }
+      }
+    }
+    channel = readDataArray[0];
+    GrowthTime = readDataArray[1];
+    typeFunction = readDataArray[2];
+    timeGrowthStartHours = readDataArray[3];
+    timeGrowthStartMinutes = readDataArray[4];
+    timeDeclineStartHours = readDataArray[5];
+    timeDeclineStartMinutes = readDataArray[6];
+    maxIntensity = readDataArray[7];
+    
+  */
 
-////aA
-  //Read sample from MatLAB for growth function
-  
-////\aA
 
+////\Variables for function
 }
 
 
@@ -198,9 +246,7 @@ void drawMenu() {                                       //LCD - draw Menu
       lcd.setCursor(0,0);
       lcd.print("Measurment: ");
       lcd.setCursor(0,1);
-      //lcd.print(arrayLen);
-      lcd.setCursor(10,1);
-      lcd.print("values");
+      lcd.print(maxIntensity);
       lcd.setCursor(0,3);
 
       if(localParametrMenu % 2 == 0){
@@ -309,3 +355,9 @@ void handleButtonClick(int* forSaving){  //Button click handle
   }
 }
 
+void growthFunction(){}
+
+float calculateEinstein (int time, int voltage, const int voltageMax){
+  float einstein = (AvogadroConstant * PlanckConstant * asin(voltage/voltageMax)) / (2 * PiConstant * time);
+  return einstein;
+}
