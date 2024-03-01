@@ -62,7 +62,7 @@
 
     float einsteinArray[MeasureTime];
   ///\Data for saving
-  
+
 ////\Growth function
 
 
@@ -178,14 +178,23 @@ void drawMenu() {                                       //LCD - draw Menu
       lcd.setCursor(0,0);
       lcd.print("Settings menu: ");
       lcd.setCursor(0,3);
-      if(localParametrMenu % 3 == 0){
-        lcd.print("Time ->");
-      }else if(localParametrMenu % 3 == 1){
-        lcd.print("<- Type ->");
-      }else{
-        lcd.print("<- Done");
+      switch(localParametrMenu){
+        case 1:{
+          lcd.print("<- Type ->");
+          break;
+        }
+        case 2:{
+          lcd.print("<- Done");
+          break;
+        }
+        default:{
+          localParametrMenu = 0;
+          lcd.print("Time ->");
+          break;
+        }
       }
-      break;}
+      break;
+    }
     case 2:{ //time measurments menu
       lcd.setCursor(0,0);
       lcd.print("Time settings menu: ");
@@ -202,57 +211,81 @@ void drawMenu() {                                       //LCD - draw Menu
       lcd.print(timeConst);
       lcd.setCursor(16, 3);
       lcd.print("Done");
-      break;} 
+      break;
+    } 
     case 3:{ //type measurments menu
       lcd.setCursor(0,0);
       lcd.print("Type settings menu: ");
       lcd.setCursor(0,3);
-      if(localParametrMenu % 3 == 0){
-        lcd.print("Block type ->");
-      }else if(localParametrMenu % 3 == 1){
-        lcd.print("<- Sinus type ->");
-      }else{
-        lcd.print("<- Day simulation");
+      switch(localParametrMenu){
+        case 1:{
+          lcd.print("<- Sinus type ->");
+          break;
+        }
+        case 2:{
+          lcd.print("<- Day simulation");
+          break;
+        }
+        default:{
+          localParametrMenu = 0;
+          lcd.print("Block type ->");
+          break;
+        }
       }
-      break;} 
+      break;
+    } 
     case 10:{  //setted program
       lcd.setCursor(0,0);
       lcd.print("Menu: ");
       lcd.setCursor(0,3);
-      if(localParametrMenu % 4 == 0){
-        lcd.print("Start final ->");  //setted program
-      } else if (localParametrMenu % 4 == 1){
-        lcd.print("<- Settings ->");  //set from 0
-      } else if (localParametrMenu % 4 == 2){
-        lcd.print("<- Save ->");  //Rework
-      } else{
-        lcd.print("<- EXIT");
+      switch(localParametrMenu){
+        case 1:{  //set all from 0
+          lcd.print("<- Settings ->");
+          break;
+        }
+        case 2:{
+          lcd.print("<- EXIT");
+          break;
+        }
+        default:{ //setted program
+          localParametrMenu = 0;
+          lcd.print("Start final ->");
+          break;
+        }
       }
-
       break;
     }
-    case -10:{  //saving data
+    case -10:{  //saving data  
       lcd.setCursor(0,0);
       lcd.print("Saving: ");
       lcd.setCursor(0,3);
-      if(localParametrMenu % 2 == 0){
-        lcd.print("START ->");
-      } else{
-        lcd.print("<- STOP");
+      switch(localParametrMenu){
+        case 1:{
+          lcd.print("<- EXIT");
+          break;
+        }
+        default:{
+          localParametrMenu = 0;
+          lcd.print("START ->");
+          break;
+        }
       }
       break;
     }
     case -1:{ //default program
       lcd.setCursor(0,0);
       lcd.print("Measurment: ");
-      lcd.setCursor(0,1);
-      lcd.print(maxIntensity);
       lcd.setCursor(0,3);
-
-      if(localParametrMenu % 2 == 0){
-        lcd.print("OK ->");
-      } else{
-        lcd.print("<- STOP");
+      switch(localParametrMenu){
+        case 1:{
+          lcd.print("<- STOP");
+          break;
+        }
+        default:{
+          localParametrMenu = 0;
+          lcd.print("OK ->");
+          break;
+        }
       }
       break;}
 
@@ -260,12 +293,20 @@ void drawMenu() {                                       //LCD - draw Menu
       lcd.setCursor(0,0);
       lcd.print("Menu: ");
       lcd.setCursor(0,3);
-      if(localParametrMenu % 3 == 0){
-        lcd.print("Start ->");  //default program from MatLAB
-      } else if (localParametrMenu % 3 == 1){
-        lcd.print("<- Settings ->");
-      } else{
-        lcd.print("<- Save");
+      switch(localParametrMenu){
+        case 1:{
+          lcd.print("<- Settings ->");
+          break;
+        }
+        case 2:{
+          lcd.print("<- Save");
+          break;
+        }
+        default:{ //default program from MatLAB
+          localParametrMenu = 0;
+          lcd.print("Start ->");
+          break;
+        }
       }
       break;
     }
@@ -276,13 +317,21 @@ void drawMenu() {                                       //LCD - draw Menu
 void handleButtonClick(int* forSaving){  //Button click handle
   switch(globalParametrMenu){
     case 1:{  //Settings
-      if(localParametrMenu % 3 == 0){
-        globalParametrMenu = 2;}  //transfer to Time
-      else if(localParametrMenu % 3 == 1){
-        globalParametrMenu = 3;} //transfer to Type
-      else{
-        globalParametrMenu = 10;
-      } //transfer to Final Menu
+      switch(localParametrMenu){
+        case 1:{  //transfer to Type
+          globalParametrMenu = 3;
+          break;
+        }
+        case 2:{  //transfer to Final Menu
+          globalParametrMenu = 10;
+          break;
+        }
+        default:{ //transfer to Time
+          localParametrMenu = 0;
+          globalParametrMenu = 2;
+          break;
+        }
+      }
       localParametrMenu = 0;
       break;
     }
@@ -292,31 +341,45 @@ void handleButtonClick(int* forSaving){  //Button click handle
       break;
     }
     case 3:{ //Type
-      if(localParametrMenu % 4 == 0){ //transfer to settings with flag
-        globalParametrMenu = 1;
-      }
-      else if(localParametrMenu % 4 == 1){ //transfer to settings with flag
-        globalParametrMenu = 1;
-      }
-      else{ //transfer to settings with flag
-        globalParametrMenu = 1;
+      switch(localParametrMenu){
+        case 1:{    //sinus type
+          globalParametrMenu = 1;
+          break;
+        }
+        case 2:{    //day simulation
+          globalParametrMenu = 1;
+          break;
+        }
+        default:{   //block type
+          localParametrMenu = 0;
+          globalParametrMenu = 1;
+          break;
+        }
       }
       localParametrMenu = 0;
       break;
     }
     case 10:{ //Final Menu
-      if (localParametrMenu % 4 == 0){
-        globalParametrMenu = -2;} //start setted program
-      else if (localParametrMenu % 4 == 1){
-        globalParametrMenu = 1;} //transfer to settings menu
-      else if (localParametrMenu % 4 == 2){
-        globalParametrMenu = -10;} //transfer to settings menu
-      else{
-        globalParametrMenu = 0;}
+
+      switch(localParametrMenu){
+        case 1:{    //transfer to settings menu
+           globalParametrMenu = 1;
+           break;
+        }
+        case 2:{    //transfer to saving menu
+          globalParametrMenu = -10;
+          break;
+        }
+        default:{   //start setted program
+          localParametrMenu = 0;
+          globalParametrMenu = -2;
+          break;
+        }
+      }
       localParametrMenu = 0;
       break;
     }
-    case -10:{  //saving data
+    case -10:{  //saving data - rework
       if (localParametrMenu % 2 == 0){
         lcd.setCursor(0,3);
         lcd.print("Proceeding... ->");
@@ -335,20 +398,36 @@ void handleButtonClick(int* forSaving){  //Button click handle
       break;
     }
     case -1:{ //default program
-      if (localParametrMenu % 2 == 0){} //Do nothing
-      else{
-        globalParametrMenu = 0;} //transfer to start menu
+      switch(localParametrMenu){
+        case 1:{  //transfer to start menu
+          globalParametrMenu = 0;
+          break;
+        }
+        default:{
+          localParametrMenu = 0;
+          //do default program
+          break;
+        }
+      }
       localParametrMenu = 0;
       break;
     }
     default:{
-      if (localParametrMenu % 3 == 0){
-        globalParametrMenu = -1;} //start default
-      else if (localParametrMenu % 3 == 1){
-        globalParametrMenu = 1;} //transfer to settings menu
-      else{
-        globalParametrMenu = -10;
-      }  //start saving data
+      switch(localParametrMenu){
+        case 1:{    //transfer to settings menu
+          globalParametrMenu = 1;
+          break;
+        }
+        case 2:{    //start saving data
+          globalParametrMenu = -10;
+          break;
+        }
+        default:{   //start default
+          localParametrMenu = 0;
+          globalParametrMenu = -1;
+          break;
+        }
+      }
       localParametrMenu = 0;
       break;
     }
