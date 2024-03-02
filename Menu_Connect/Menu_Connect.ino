@@ -37,7 +37,7 @@
 
 ///MatLab Connection Global variables
   int channel = 0;  //default value
-  int GrowthTime = 60;  //in min
+  int growthTime = 60;  //in min
   int typeFunction = 0;  //block type
   int timeGrowthStartHours = 8;
   int timeGrowthStartMinutes = 0;
@@ -62,7 +62,7 @@
 
     float einsteinArray[MeasureTime];
   ///\Data for saving
-
+  int channels[8] = {1,0,0,0,0,0,0,0};
 ////\Growth function
 
 
@@ -287,7 +287,25 @@ void drawMenu() {                                       //LCD - draw Menu
           break;
         }
       }
-      break;}
+      break;
+    }
+    case -2:{//FINAL setted program
+      lcd.setCursor(0,0);
+      lcd.print("Measurment: ");
+      lcd.setCursor(0,3);
+      switch(localParametrMenu){
+        case 1:{
+          lcd.print("<- STOP");
+          break;
+        }
+        default:{
+          localParametrMenu = 0;
+          lcd.print("OK ->");
+          break;
+        }
+      }
+      break;
+    }
 
     default:{  //start menu
       lcd.setCursor(0,0);
@@ -322,7 +340,7 @@ void handleButtonClick(int* forSaving){  //Button click handle
           globalParametrMenu = 3;
           break;
         }
-        case 2:{  //transfer to Final Menu
+        case 2:{  //DONE transfer to Final Menu
           globalParametrMenu = 10;
           break;
         }
@@ -366,8 +384,8 @@ void handleButtonClick(int* forSaving){  //Button click handle
            globalParametrMenu = 1;
            break;
         }
-        case 2:{    //transfer to saving menu
-          globalParametrMenu = -10;
+        case 2:{    //transfer to START MENU
+          globalParametrMenu = 0;
           break;
         }
         default:{   //start setted program
@@ -390,7 +408,7 @@ void handleButtonClick(int* forSaving){  //Button click handle
             delay(2000);
             }
         }
-      } //Do nothing
+      }
       else{
         Serial.println(-1);
         globalParametrMenu = 0;} //transfer to start menu
@@ -403,9 +421,46 @@ void handleButtonClick(int* forSaving){  //Button click handle
           globalParametrMenu = 0;
           break;
         }
-        default:{
+        default:{ //do default program
+          lcd.setCursor(0, 1);
+          lcd.print("Starting...");
+          delay(100); //for see, that Starting is on screen
+          for(int i = 0; i < growthTime*60; i++){
+            for (int j = 0; j < 8; j++){
+              if(channels[j] == 1){
+                growthFunctionBlock(i, j);
+              }
+            }
+          }
+          lcd.setCursor(0, 1);
+          lcd.print("Proceed...");
+          delay(1000); //for see, that Proceed is on screen
+          break;
+        }
+      }
+      localParametrMenu = 0;
+      break;
+    }
+    case -2:{ //START FINAL setted program
+      switch(localParametrMenu){
+        case 1:{  //transfer to start menu
+          globalParametrMenu = 0;
+          break;
+        }
+        default:{ //do setted program
           localParametrMenu = 0;
-          //do default program
+          lcd.setCursor(0, 1);
+          lcd.print("Starting...");
+          delay(100); //for see, that Starting is on screen
+          for(int i = 0; i < growthTime*60; i++){ //change growthTime to settedTime
+            for (int j = 0; j < 8; j++){
+              if(channels[j] == 1){
+                growthFunctionBlock(i, j);
+              }
+            }
+          }
+          lcd.setCursor(0, 1);
+          lcd.print("Proceed...");
           break;
         }
       }
@@ -434,7 +489,17 @@ void handleButtonClick(int* forSaving){  //Button click handle
   }
 }
 
-void growthFunction(){}
+void growthFunctionBlock(int time, int channel){ //time - sec from cycle starts
+  double angleStep = (PiConstant / 2) / (growthTime * 60);
+  int bright = sin(angleStep * time) * maxIntensity;
+  // pwmController.setChannelPWM(channel, bright);  //uncomment when add pwm
+}
+
+void declineFunctionBlock(int time, int channel){ //time - sec from cycle starts
+  double angleStep = (PiConstant / 2) / (growthTime * 60);
+  int bright = sin((angleStep * time) + (PiConstant / 2)) * maxIntensity;
+  // pwmController.setChannelPWM(channel, bright);  //uncomment when add pwm
+}
 
 float calculateEinstein (int time, int voltage, const int voltageMax){
   float einstein = (AvogadroConstant * PlanckConstant * asin(voltage/voltageMax)) / (2 * PiConstant * time);
