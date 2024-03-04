@@ -4,7 +4,7 @@
 
 ////Menu Global variables
   // Define debounce time in milliseconds
-  #define DEBOUNCE_TIME 50
+  #define DEBOUNCE_TIME 25
   
 
   // Variables for button debounce
@@ -20,7 +20,7 @@
   //Menu's global
   int localParametrMenu = 0;
   int globalParametrMenu = 0;
-  int timeConst = 0;
+  int timeChooser = 0;
 
   // LCD display I2C
   LiquidCrystal_I2C lcd(0x27, 20, 4);     
@@ -137,7 +137,6 @@ void loop() {
 ////Menu
   stavCLK = digitalRead(pinCLK);
   stavSW = digitalRead(pinSW);
-int array[] = {1,2,3,-1};
   //Encoder rotation
   if (stavCLK != stavPred) {
     if (digitalRead(pinDT) != stavCLK){localParametrMenu++;}
@@ -157,7 +156,7 @@ int array[] = {1,2,3,-1};
     if (reading != buttonState) {
       buttonState = reading;
       if (buttonState == LOW) {
-        handleButtonClick(array);
+        handleButtonClick(einsteinArray);
         drawMenu();
       }
     }
@@ -184,31 +183,43 @@ void drawMenu() {                                       //LCD - draw Menu
           break;
         }
         case 2:{
+          lcd.print("<- Intensity ->");
+          break;
+        }
+        case 3:{
+          lcd.print("<- Start time ->");
+          break;
+        }
+        case 4:{
+          lcd.print("<- Final time ->");
+          break;
+        }
+        case 5:{
           lcd.print("<- Done");
           break;
         }
         default:{
           localParametrMenu = 0;
-          lcd.print("Time ->");
+          lcd.print("Growth time ->");
           break;
         }
       }
       break;
     }
-    case 2:{ //time measurments menu
+    case 2:{ //Growth time measurments menu
       lcd.setCursor(0,0);
       lcd.print("Time settings menu: ");
       lcd.setCursor(0, 1);
       lcd.print("Set time [min]:");
-      lcd.setCursor(0, 2);
+      lcd.setCursor(0, 3);
       if (localParametrMenu < 0){
         localParametrMenu = 0;
-        timeConst = localParametrMenu;
+        growthTime = localParametrMenu;
       }
       else{
-        timeConst = localParametrMenu;
+        growthTime = localParametrMenu;
       }
-      lcd.print(timeConst);
+      lcd.print(growthTime);
       lcd.setCursor(16, 3);
       lcd.print("Done");
       break;
@@ -233,7 +244,133 @@ void drawMenu() {                                       //LCD - draw Menu
         }
       }
       break;
-    } 
+    }
+    case 4:{  //Intensity
+      lcd.setCursor(0,0);
+      lcd.print("Max intensity menu:");
+      lcd.setCursor(0, 1);
+      lcd.print("Set intensity x32:");
+      lcd.setCursor(0, 3);
+      if (localParametrMenu * 32 < 0){
+        localParametrMenu = 0;
+      }
+      else if(localParametrMenu * 32 > 4096){
+        localParametrMenu = 4096 / 32;
+      }
+      maxIntensity = localParametrMenu * 32;
+      lcd.print(maxIntensity);
+      lcd.setCursor(16, 3);
+      lcd.print("Done");
+      break;
+    }
+    case 5:{
+      lcd.setCursor(0,0);
+      lcd.print("Start time menu:");
+      lcd.setCursor(0, 1);
+      lcd.print("Set time:");
+
+      if(timeChooser == 0){   //hours
+
+        if(localParametrMenu < 0){
+          localParametrMenu = 23;
+        }
+        else if(localParametrMenu > 23){
+          localParametrMenu = 0;
+        }
+        timeGrowthStartHours = localParametrMenu;
+
+      }
+      else{   //minutes
+
+        if(localParametrMenu < 0){
+          localParametrMenu = 59;
+        }
+        else if(localParametrMenu > 59){
+          localParametrMenu = 0;
+        }
+        timeGrowthStartMinutes = localParametrMenu;
+
+      }
+      //if else for lcd print
+      if(timeGrowthStartHours < 10){
+        lcd.setCursor(0, 3);
+        lcd.print(0);
+        lcd.setCursor(1, 3);
+        lcd.print(timeGrowthStartHours);
+      } else{
+        lcd.setCursor(0, 3);
+        lcd.print(timeGrowthStartHours);
+      }
+      lcd.setCursor(2, 3);
+      lcd.print(":");
+      if(timeGrowthStartMinutes < 10){
+        lcd.setCursor(3, 3);
+        lcd.print(0);
+        lcd.setCursor(4, 3);
+        lcd.print(timeGrowthStartMinutes);
+      } else{
+        lcd.setCursor(3, 3);
+        lcd.print(timeGrowthStartMinutes);
+      }
+
+      lcd.setCursor(16, 3);
+      lcd.print("Done");
+      break;
+    }
+    case 6:{
+      lcd.setCursor(0,0);
+      lcd.print("Final time menu:");
+      lcd.setCursor(0, 1);
+      lcd.print("Set time:");
+
+      if(timeChooser == 0){   //hours
+
+        if(localParametrMenu < 0){
+          localParametrMenu = 23;
+        }
+        else if(localParametrMenu > 23){
+          localParametrMenu = 0;
+        }
+        timeDeclineStartHours = localParametrMenu;
+
+      }
+      else{   //minutes
+
+        if(localParametrMenu < 0){
+          localParametrMenu = 59;
+        }
+        else if(localParametrMenu > 59){
+          localParametrMenu = 0;
+        }
+        timeDeclineStartMinutes = localParametrMenu;
+
+      }
+      //if else for lcd print
+      if(timeDeclineStartHours < 10){
+        lcd.setCursor(0, 3);
+        lcd.print(0);
+        lcd.setCursor(1, 3);
+        lcd.print(timeDeclineStartHours);
+      } else{
+        lcd.setCursor(0, 3);
+        lcd.print(timeDeclineStartHours);
+      }
+      lcd.setCursor(2, 3);
+      lcd.print(":");
+      if(timeDeclineStartMinutes < 10){
+        lcd.setCursor(3, 3);
+        lcd.print(0);
+        lcd.setCursor(4, 3);
+        lcd.print(timeDeclineStartMinutes);
+      } else{
+        lcd.setCursor(3, 3);
+        lcd.print(timeDeclineStartMinutes);
+      }
+
+      lcd.setCursor(16, 3);
+      lcd.print("Done");
+      break;
+    }
     case 10:{  //setted program
       lcd.setCursor(0,0);
       lcd.print("Menu: ");
@@ -332,7 +469,7 @@ void drawMenu() {                                       //LCD - draw Menu
 }                                                     //\LCD - draw Menu
 
 
-void handleButtonClick(int* forSaving){  //Button click handle
+void handleButtonClick(float* forSaving){  //Button click handle
   switch(globalParametrMenu){
     case 1:{  //Settings
       switch(localParametrMenu){
@@ -340,11 +477,23 @@ void handleButtonClick(int* forSaving){  //Button click handle
           globalParametrMenu = 3;
           break;
         }
-        case 2:{  //DONE transfer to Final Menu
+        case 2:{  //transfer to Intensity
+          globalParametrMenu = 4;
+          break;
+        }
+        case 3:{  //transfer to Start time
+          globalParametrMenu = 5;
+          break;
+        }
+        case 4:{  //transfer to Final time
+          globalParametrMenu = 6;
+          break;
+        }
+        case 5:{  //DONE transfer to Final Menu
           globalParametrMenu = 10;
           break;
         }
-        default:{ //transfer to Time
+        default:{ //transfer to Growth time
           localParametrMenu = 0;
           globalParametrMenu = 2;
           break;
@@ -353,7 +502,8 @@ void handleButtonClick(int* forSaving){  //Button click handle
       localParametrMenu = 0;
       break;
     }
-    case 2:{ //Time
+    case 2:
+    case 4:{ //Growth time & Intensity
       localParametrMenu = 0;
       globalParametrMenu = 1; //transfer to Settings Menu
       break;
@@ -361,20 +511,36 @@ void handleButtonClick(int* forSaving){  //Button click handle
     case 3:{ //Type
       switch(localParametrMenu){
         case 1:{    //sinus type
+          typeFunction = 1;
           globalParametrMenu = 1;
           break;
         }
         case 2:{    //day simulation
+          typeFunction = 2;
           globalParametrMenu = 1;
           break;
         }
         default:{   //block type
+          typeFunction = 0;
           localParametrMenu = 0;
           globalParametrMenu = 1;
           break;
         }
       }
       localParametrMenu = 0;
+      break;
+    }
+    case 5:
+    case 6:{   //Start, Final time
+      if(timeChooser == 0){
+        localParametrMenu = 0;
+        timeChooser++;
+      }
+      else{
+        timeChooser = 0;
+        localParametrMenu = 0;
+        globalParametrMenu = 1; //transfer to Settings Menu
+      }
       break;
     }
     case 10:{ //Final Menu
@@ -398,21 +564,25 @@ void handleButtonClick(int* forSaving){  //Button click handle
       break;
     }
     case -10:{  //saving data - rework
-      if (localParametrMenu % 2 == 0){
-        lcd.setCursor(0,3);
-        lcd.print("Proceeding... ->");
-        if(Serial.availableForWrite()){
-          Serial.println(0);
-          for (int i = 0; i < forSaving[i] != -1; i++){
-            Serial.println(forSaving[i]); // Send value into Serial port
-            delay(2000);
+      switch(localParametrMenu){
+        default:{
+          localParametrMenu = 0;
+          lcd.setCursor(0,3);
+          lcd.print("Proceeding... ->");
+          if(Serial.availableForWrite()){
+            Serial.println(0);
+            for (int i = 0; i < forSaving[i] != -1; i++){
+              Serial.println(forSaving[i]); // Send value into Serial port
+              delay(2000);
             }
+          }
+          break;
+        }
+        case 1:{
+          globalParametrMenu = 0;
+          break;
         }
       }
-      else{
-        Serial.println(-1);
-        globalParametrMenu = 0;} //transfer to start menu
-      localParametrMenu = 0;
       break;
     }
     case -1:{ //default program
@@ -422,19 +592,23 @@ void handleButtonClick(int* forSaving){  //Button click handle
           break;
         }
         default:{ //do default program
-          lcd.setCursor(0, 1);
+          lcd.setCursor(0, 3);
           lcd.print("Starting...");
-          delay(100); //for see, that Starting is on screen
-          for(int i = 0; i < growthTime*60; i++){
-            for (int j = 0; j < 8; j++){
-              if(channels[j] == 1){
-                growthFunctionBlock(i, j);
+          // if(time.hour == timeGrowthStartHours) && (time.min == timeGrowthStartMinutes) && (time.sec == 0){
+            for(int i = 0; i < growthTime*60; i++){
+              for (int j = 0; j < 8; j++){
+                if(channels[j] == 1){
+                  growthFunctionBlock(i, j);
+                }
               }
+              delay(1); //change to 1000 or chain with real time
             }
-          }
-          lcd.setCursor(0, 1);
+          // }
+          // lcd.clear();
+          lcd.setCursor(0, 3);
           lcd.print("Proceed...");
-          delay(1000); //for see, that Proceed is on screen
+          //until time for decline
+          delay(3000); //for see, that Proceed is on screen
           break;
         }
       }
@@ -501,7 +675,7 @@ void declineFunctionBlock(int time, int channel){ //time - sec from cycle starts
   // pwmController.setChannelPWM(channel, bright);  //uncomment when add pwm
 }
 
-float calculateEinstein (int time, int voltage, const int voltageMax){
+float calculateEinstein (int time, int voltage, const int voltageMax){   //return data in einsteins for saving in file
   float einstein = (AvogadroConstant * PlanckConstant * asin(voltage/voltageMax)) / (2 * PiConstant * time);
   return einstein;
 }
