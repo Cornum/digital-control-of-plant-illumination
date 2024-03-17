@@ -26,6 +26,8 @@
     int localParametrMenu = 0;
     int globalParametrMenu = 0;
     int timeChooser = 0;
+    int typeChooser = 0;
+    int typeChannel;
 
   // LCD display I2C
     LiquidCrystal_I2C lcd(0x27, 20, 4);     
@@ -41,12 +43,12 @@
 
   ///Global variables for settings
     struct ChannelTypePair{
-      const char* channel;      //channel number
+      const int channel;      //channel number
       int typeFunction;       //block type / sinus type / day simulation type 
     };
     //int pins[2] = {1,1};      //for experimental only 2 pins which both are on
     const int dictSize = 2;
-    ChannelTypePair channels[dictSize] = {{"0",0}, {"1",0}};    //{channel number, block type function}
+    ChannelTypePair channels[dictSize] = {{0,0}, {1,0}};    //{channel number, block type function}
     int growthTime = 60;  //in min
     int timeGrowthStartHours = 8;
     int timeGrowthStartMinutes = 0;
@@ -64,7 +66,14 @@
     int tenPow = -11;
   ///\Einstein data
 
-  tmElements_t tm;          //time element DS1307
+  ///Time variables
+  tmElements_t tm;
+  tmElements_t rtcTime;
+
+  time_t startTime;
+  time_t elapsedTime;
+  time_t finishTime;
+  ///\Time variables
 
   PCA9685 pwmController1(B000000);        //pwm controller I2C
   PCA9685 pwmController2(B000001);        //pwm controller I2C
@@ -73,6 +82,18 @@
 
 void setup() {
   Serial.begin(115200);         // Serial speed
+
+  RTC.read(rtcTime);
+  tm.Hour = rtcTime.Hour;
+  tm.Minute = rtcTime.Minute;
+  tm.Second = rtcTime.Second;
+  tm.Day = rtcTime.Day;
+  tm.Month = rtcTime.Month;
+  tm.Year = rtcTime.Year;
+
+  startTime = makeTime(tm);
+
+  finishTime = makeTime(tm);
 ////Menu
   res =(int) pow(2,res);        // Resolution 2^res --- 4096 values   
   //PWM setup
@@ -113,6 +134,8 @@ void loop() {
 ////Menu
   stateCLK = digitalRead(pinCLK);
   stateSW = digitalRead(pinSW);
+  RTC.read(rtcTime);
+  elapsedTime = makeTime(rtcTime) - startTime;
 
   //Encoder rotation
   if (stateCLK != stateBefore) {
@@ -203,20 +226,36 @@ void drawMenu() {                                       //LCD - draw Menu
     case 3:{ //type measurments menu
       lcd.setCursor(0,0);
       lcd.print("Type settings menu: ");
-      lcd.setCursor(0,3);
-      switch(localParametrMenu){
-        case 1:{
-          lcd.print("<- Sinus type ->");
-          break;
+      if(typeChooser == 0){
+        lcd.setCursor(0,1);
+        switch(localParametrMenu){
+          case 1:{
+            lcd.print("<- Channel 2");
+            break;
+          }
+          default:{
+            localParametrMenu = 0;
+            lcd.print("Channel 1 ->");
+            break;
+          }
         }
-        case 2:{
-          lcd.print("<- Day simulation");
-          break;
-        }
-        default:{
-          localParametrMenu = 0;
-          lcd.print("Block type ->");
-          break;
+      }
+      else{
+        lcd.setCursor(0,3);
+        switch(localParametrMenu){
+          case 1:{
+            lcd.print("<- Sinus type ->");
+            break;
+          }
+          case 2:{
+            lcd.print("<- Day simulation");
+            break;
+          }
+          default:{
+            localParametrMenu = 0;
+            lcd.print("Block type ->");
+            break;
+          }
         }
       }
       break;
@@ -360,7 +399,7 @@ void drawMenu() {                                       //LCD - draw Menu
           lcd.print("<- EXIT");
           break;
         }
-        default:{ //setted program
+        default:{
           localParametrMenu = 0;
           lcd.print("Start final ->");
           break;
@@ -412,7 +451,7 @@ void drawMenu() {                                       //LCD - draw Menu
           lcd.print("<- Settings");
           break;
         }
-        default:{ //default program from MatLAB
+        default:{ //default program
           localParametrMenu = 0;
           lcd.print("Start ->");
           break;
@@ -464,22 +503,30 @@ void handleButtonClick(){  //Button click handle
       break;
     }
     case 3:{ //Type
-      switch(localParametrMenu){
-        case 1:{    //sinus type
-          setTypeFunction("0", 1);
-          globalParametrMenu = 1;
-          break;
-        }
-        case 2:{    //day simulation
-          setTypeFunction("0", 2);
-          globalParametrMenu = 1;
-          break;
-        }
-        default:{   //block type
-          setTypeFunction("0", 0);
-          localParametrMenu = 0;
-          globalParametrMenu = 1;
-          break;
+      if(typeChooser  == 0){
+        typeChannel = localParametrMenu;
+        localParametrMenu = 0;
+        typeChooser++;
+      }
+      else{
+        typeChooser = 0;
+        switch(localParametrMenu){
+          case 1:{    //sinus type
+            setTypeFunction(typeChannel, 1);
+            globalParametrMenu = 1;
+            break;
+          }
+          case 2:{    //day simulation
+            setTypeFunction(typeChannel, 2);
+            globalParametrMenu = 1;
+            break;
+          }
+          default:{   //block type
+            setTypeFunction(typeChannel, 0);
+            localParametrMenu = 0;
+            globalParametrMenu = 1;
+            break;
+          }
         }
       }
       localParametrMenu = 0;
@@ -492,6 +539,14 @@ void handleButtonClick(){  //Button click handle
         timeChooser++;
       }
       else{
+        tm.Hour = timeGrowthStartHours;
+        tm.Minute = timeGrowthStartMinutes;
+        tm.Second = 0;
+        startTime = makeTime(tm);
+        tm.Hour = timeDeclineStartHours;
+        tm.Minute = timeDeclineStartMinutes;
+        tm.Second = 0;
+        finishTime = makeTime(tm);
         timeChooser = 0;
         localParametrMenu = 0;
         globalParametrMenu = 1; //transfer to Settings Menu
@@ -556,10 +611,16 @@ void handleButtonClick(){  //Button click handle
           localParametrMenu = 0;
           lcd.setCursor(0, 1);
           lcd.print("Starting...");
-          delay(100); //for see, that Starting is on screen
-          for(int i = 0; i < growthTime*60; i++){ //change growthTime to settedTime
-            for (int j = 0; j < 2; j++){
-              growthFunctionBlock(i, pinGlobal, j);
+          while(startTime == makeTime(rtcTime)){
+            for(int i = 0; i < growthTime*60; i++){ //change growthTime to settedTime  time here in sec
+              for (int j = 0; j < 2; j++){
+                if (getTypeFunction(j) == 0){
+                  growthFunctionBlock(i, pinGlobal, j);
+                }
+                else{
+                  //sin function
+                }
+              }
             }
           }
           lcd.setCursor(0, 1);
@@ -574,10 +635,6 @@ void handleButtonClick(){  //Button click handle
       switch(localParametrMenu){
         case 1:{    //transfer to settings menu
           globalParametrMenu = 1;
-          break;
-        }
-        case 2:{    //start saving data
-          globalParametrMenu = -10;
           break;
         }
         default:{   //start default
@@ -596,37 +653,41 @@ void growthFunctionBlock(int time, int pin, int channel){ //time - sec from cycl
   double angleStep = (PiConstant / 2) / (growthTime * 60);
   int bright = sin(angleStep * time) * maxIntensity;
 
-  if (channel == 1){
+  if (channel == 0){
     pwmController1.setChannelPWM(pin, bright); 
   }
   else{
     pwmController2.setChannelPWM(pin, bright);
   }
 
-  printEinstein({time},bright);     //chain with time from all works time
+  printEinstein(elapsedTime,bright);
 }
 
-void declineFunctionBlock(int time, int pin, int channel){ //time - sec from cycle starts
+void declineFunctionBlock(int time, int pin, int channel){ //time - sec from cycle starts   pin - position on board   channel 1-8(here 1-2) channels connected to arduino
   double angleStep = (PiConstant / 2) / (growthTime * 60);
   int bright = sin((angleStep * time) + (PiConstant / 2)) * maxIntensity;
   
-  if (channel == 1){
+  if (channel == 0){
     pwmController1.setChannelPWM(pin, bright); 
   }
   else{
     pwmController2.setChannelPWM(pin, bright);
   }
 
-  printEinstein({time},bright);     //chain with time from all works time
+  printEinstein(elapsedTime,bright);
 }
 
-void printEinstein (int time, int voltage){   //return data in einsteins for saving in file
+void growthFunctionSin(){}
+
+void declineFunctionSin(){}
+
+void printEinstein (int time, int voltage){   //Print data in einsteins into Serial
   float einstein = (1000000 * AvogadroConstant * PlanckConstant * asin(voltage/VoltageMax)) / (2 * PiConstant * time);  //1000000 is value for value > 0 in float
   Serial.print(einstein);
   Serial.println(" * 10^-11 mkE");
 }
 
-int getTypeFunction(const char* channel){
+int getTypeFunction(const int channel){
   for (int i = 0; i < dictSize; i++){
     if(strcmp(channel, channels[i].channel) == 0){ //find definition strcmp
       return channels[i].typeFunction;
@@ -635,7 +696,7 @@ int getTypeFunction(const char* channel){
   return -1;     //channel isn't found
 }
 
-void setTypeFunction(const char* channel, int newType){
+void setTypeFunction(const int channel, int newType){
   for (int i = 0; i < dictSize; i++){
     if(strcmp(channel, channels[i].channel) == 0){
       channels[i].typeFunction = newType;
