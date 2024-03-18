@@ -1,10 +1,11 @@
+//line 614 and 659 try to do async now Work only 1
+
 #include <Wire.h>                 //for I2C
 #include <LiquidCrystal_I2C.h>    //for LSD
 #include <math.h>
 #include <DS1307RTC.h>            //for time
 #include <TimeLib.h>
 #include "PCA9685.h"
-
 
 ////Menu Global variables
   // Define debounce time in milliseconds
@@ -626,11 +627,13 @@ void handleButtonClick(){  //Button click handle
                 if (getTypeFunction(j) == 0){
                   for(int i = 0; i < growthTime*60; i++){
                     growthFunctionBlock(i, pinGlobal, j);
+                    // delay(1000);   //Dont know if need to leave it
                   }
                 }
                 else{
                   for(int i = 0; i < ((finishTime-startTime)/2); i++){
                     functionSin(i, pinGlobal, j);
+                    // delay(1000);   //Dont know if need to leave it
                   }
                 }
               }
@@ -641,6 +644,7 @@ void handleButtonClick(){  //Button click handle
                 if (getTypeFunction(j) == 0){
                   for(int i = 0; i < growthTime*60; i++){
                     declineFunctionBlock(i, pinGlobal, j);
+                    // delay(1000);   //Dont know if need to leave it
                   }
                 }
               }
@@ -672,11 +676,13 @@ void handleButtonClick(){  //Button click handle
                 if (getTypeFunction(j) == 0){
                   for(int i = 0; i < growthTime*60; i++){
                     growthFunctionBlock(i, pinGlobal, j);
+                    // delay(1000);   //Dont know if need to leave it
                   }
                 }
                 else{
                   for(int i = 0; i < ((finishTime-startTime)/2); i++){
                     functionSin(i, pinGlobal, j);
+                    // delay(1000);   //Dont know if need to leave it
                   }
                 }
               }
@@ -687,6 +693,7 @@ void handleButtonClick(){  //Button click handle
                 if (getTypeFunction(j) == 0){
                   for(int i = 0; i < growthTime*60; i++){
                     declineFunctionBlock(i, pinGlobal, j);
+                    // delay(1000);   //Dont know if need to leave it
                   }
                 }
               }
@@ -746,7 +753,7 @@ void declineFunctionBlock(int time, int pin, int channel){ //time - sec from cyc
 }
 
 void functionSin(int time, int pin, int channel){
-  double angleStep = (PiConstant / 2) / ((finishTime-startTime)/2);
+  double angleStep = (PiConstant) / ((finishTime-startTime)/2);
   double quocient = maxIntensity*(finishTime-startTime)/cos((finishTime-startTime)/2);
   int bright = sin(angleStep * time) * quocient;
 
