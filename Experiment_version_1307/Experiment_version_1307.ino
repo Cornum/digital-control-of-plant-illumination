@@ -27,6 +27,7 @@
     int globalParametrMenu = 0;
     int timeChooser = 0;
     int typeChooser = 0;
+    int intensityChooser = 0;
     int typeChannel;
 
   // LCD display I2C
@@ -55,6 +56,9 @@
     int timeDeclineStartHours = 23;
     int timeDeclineStartMinutes = 0;
     int maxIntensity = 2048;  //up to 4095
+
+    int intensityQ = 10;
+    bool isProceed = true;
   ///\Global variables
 ////\Menu
 
@@ -82,7 +86,7 @@
 
 void setup() {
   Serial.begin(115200);         // Serial speed
-
+  //Time setup
   RTC.read(rtcTime);
   tm.Hour = rtcTime.Hour;
   tm.Minute = rtcTime.Minute;
@@ -91,9 +95,17 @@ void setup() {
   tm.Month = rtcTime.Month;
   tm.Year = rtcTime.Year;
 
+  tm.Hour = timeGrowthStartHours;
+  tm.Minute = timeGrowthStartMinutes;
+  tm.Second = 0;
   startTime = makeTime(tm);
 
+  tm.Hour = timeDeclineStartHours;
+  tm.Minute = timeDeclineStartMinutes;
+  tm.Second = 0;
   finishTime = makeTime(tm);
+  //\Time setup
+
 ////Menu
   res =(int) pow(2,res);        // Resolution 2^res --- 4096 values   
   //PWM setup
@@ -213,11 +225,8 @@ void drawMenu() {                                       //LCD - draw Menu
       lcd.setCursor(0, 3);
       if (localParametrMenu < 0){
         localParametrMenu = 0;
-        growthTime = localParametrMenu;
       }
-      else{
-        growthTime = localParametrMenu;
-      }
+      growthTime = localParametrMenu;
       lcd.print(growthTime);
       lcd.setCursor(16, 3);
       lcd.print("Done");
@@ -264,15 +273,30 @@ void drawMenu() {                                       //LCD - draw Menu
       lcd.setCursor(0,0);
       lcd.print("Max intensity menu:");
       lcd.setCursor(0, 1);
-      lcd.print("Set intensity x32:");
+      lcd.print("Set intensity x  :");
+      lcd.setCursor(15, 1);
+      if(intensityChooser == 0){
+        if(localParametrMenu < 0){
+          localParametrMenu = 99;
+        }
+        else if(localParametrMenu > 99){
+          localParametrMenu = 0;
+        }
+        intensityQ = localParametrMenu;
+      }
+      else{
+        maxIntensity = localParametrMenu * intensityQ;
+        if (localParametrMenu * intensityQ < 0){
+          localParametrMenu = 0;
+          maxIntensity = localParametrMenu * intensityQ;
+        }
+        else if(localParametrMenu * intensityQ > 4096){
+          localParametrMenu = 4096 / intensityQ;
+          maxIntensity = 4095;
+        }
+      }
+      lcd.print(intensityQ);
       lcd.setCursor(0, 3);
-      if (localParametrMenu * 32 < 0){
-        localParametrMenu = 0;
-      }
-      else if(localParametrMenu * 32 > 4096){
-        localParametrMenu = 4096 / 32;
-      }
-      maxIntensity = localParametrMenu * 32;
       lcd.print(maxIntensity);
       lcd.setCursor(16, 3);
       lcd.print("Done");
@@ -468,39 +492,53 @@ void handleButtonClick(){  //Button click handle
     case 1:{  //Settings
       switch(localParametrMenu){
         case 1:{  //transfer to Type
+          localParametrMenu = 0;
           globalParametrMenu = 3;
           break;
         }
         case 2:{  //transfer to Intensity
+          localParametrMenu = intensityQ;
           globalParametrMenu = 4;
           break;
         }
         case 3:{  //transfer to Start time
+          localParametrMenu = timeGrowthStartHours;
           globalParametrMenu = 5;
           break;
         }
         case 4:{  //transfer to Final time
+          localParametrMenu = timeDeclineStartHours;
           globalParametrMenu = 6;
           break;
         }
         case 5:{  //DONE transfer to Final Menu
+          localParametrMenu = 0;
           globalParametrMenu = 10;
           break;
         }
         default:{ //transfer to Growth time
-          localParametrMenu = 0;
+          localParametrMenu = growthTime;
           globalParametrMenu = 2;
           break;
         }
       }
-      localParametrMenu = 0;
       break;
     }
-    case 2:
-    case 4:{ //Growth time & Intensity
+    case 2:{ //Growth time
       localParametrMenu = 0;
       globalParametrMenu = 1; //transfer to Settings Menu
       break;
+    }
+    case 4:{ //Intensity
+      if(intensityChooser == 0){
+        localParametrMenu = 0;
+        intensityChooser++;
+      }
+      else{
+        intensityChooser = 0;
+        localParametrMenu = 0;
+        globalParametrMenu = 1; //transfer to Settings Menu
+      }
     }
     case 3:{ //Type
       if(typeChooser  == 0){
@@ -581,20 +619,34 @@ void handleButtonClick(){  //Button click handle
         }
         default:{ //do default program
           lcd.setCursor(0, 3);
-          lcd.print("Starting...");
-          // if(time.hour == timeGrowthStartHours) && (time.min == timeGrowthStartMinutes) && (time.sec == 0){
-            for(int i = 0; i < growthTime*60; i++){
-              for (int j = 0; j < 2; j++){
-                growthFunctionBlock(i, pinGlobal, j);
-              }
-              delay(1); //change to 1000 or chain with real time
-            }
-          // }
-          // lcd.clear();
-          lcd.setCursor(0, 3);
           lcd.print("Proceed...");
-          //until time for decline
-          delay(3000); //for see, that Proceed is on screen
+          while(isProceed){
+            while(startTime == makeTime(rtcTime)){
+              for (int j = 0; j < 2; j++){
+                if (getTypeFunction(j) == 0){
+                  for(int i = 0; i < growthTime*60; i++){
+                    growthFunctionBlock(i, pinGlobal, j);
+                  }
+                }
+                else{
+                  for(int i = 0; i < ((finishTime-startTime)/2); i++){
+                    functionSin(i, pinGlobal, j);
+                  }
+                }
+              }
+              isProceed = false;
+            }
+            while(finishTime == makeTime(rtcTime)){
+              for (int j = 0; j < 2; j++){
+                if (getTypeFunction(j) == 0){
+                  for(int i = 0; i < growthTime*60; i++){
+                    declineFunctionBlock(i, pinGlobal, j);
+                  }
+                }
+              }
+              isProceed = false;
+            }
+          }
           break;
         }
       }
@@ -610,21 +662,37 @@ void handleButtonClick(){  //Button click handle
         default:{ //do setted program
           localParametrMenu = 0;
           lcd.setCursor(0, 1);
-          lcd.print("Starting...");
-          while(startTime == makeTime(rtcTime)){
-            for(int i = 0; i < growthTime*60; i++){ //change growthTime to settedTime  time here in sec
+          lcd.print("Proceed...");
+          Serial.println(growthTime);
+          Serial.println((finishTime-startTime)/2);
+          Serial.println(maxIntensity);
+          while(isProceed){
+            while(startTime == makeTime(rtcTime)){
               for (int j = 0; j < 2; j++){
                 if (getTypeFunction(j) == 0){
-                  growthFunctionBlock(i, pinGlobal, j);
+                  for(int i = 0; i < growthTime*60; i++){
+                    growthFunctionBlock(i, pinGlobal, j);
+                  }
                 }
                 else{
-                  //sin function
+                  for(int i = 0; i < ((finishTime-startTime)/2); i++){
+                    functionSin(i, pinGlobal, j);
+                  }
                 }
               }
+              isProceed = false;
+            }
+            while(finishTime == makeTime(rtcTime)){
+              for (int j = 0; j < 2; j++){
+                if (getTypeFunction(j) == 0){
+                  for(int i = 0; i < growthTime*60; i++){
+                    declineFunctionBlock(i, pinGlobal, j);
+                  }
+                }
+              }
+              isProceed = false;
             }
           }
-          lcd.setCursor(0, 1);
-          lcd.print("Proceed...");
           break;
         }
       }
@@ -677,9 +745,21 @@ void declineFunctionBlock(int time, int pin, int channel){ //time - sec from cyc
   printEinstein(elapsedTime,bright);
 }
 
-void growthFunctionSin(){}
+void functionSin(int time, int pin, int channel){
+  double angleStep = (PiConstant / 2) / ((finishTime-startTime)/2);
+  double quocient = maxIntensity*(finishTime-startTime)/cos((finishTime-startTime)/2);
+  int bright = sin(angleStep * time) * quocient;
 
-void declineFunctionSin(){}
+  if (channel == 0){
+    pwmController1.setChannelPWM(pin, bright); 
+  }
+  else{
+    pwmController2.setChannelPWM(pin, bright);
+  }
+
+  printEinstein(elapsedTime,bright);
+}
+
 
 void printEinstein (int time, int voltage){   //Print data in einsteins into Serial
   float einstein = (1000000 * AvogadroConstant * PlanckConstant * asin(voltage/VoltageMax)) / (2 * PiConstant * time);  //1000000 is value for value > 0 in float
