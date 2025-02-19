@@ -9,3 +9,5 @@
 Modules:
 lcd display.
 PCA9685
+DS1307
+Encoder
